@@ -30,4 +30,4 @@ run: kernel.iso
 	VirtualBoxVM --startvm "My Operating System" &
 	
 clean:
-	rm *.o *.bin
+	rm *.o *.bin *.iso | rm -rf iso
