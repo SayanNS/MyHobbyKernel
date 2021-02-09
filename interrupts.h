@@ -24,8 +24,7 @@ protected:
 	struct InterruptDescriptorTablePointer
 	{
 		uint16_t size;
-		uint16_t base;
-
+		uint32_t base;
 	} __attribute__((packed));
 
 	static void SetInterruptDescriptorTableEntry(

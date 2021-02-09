@@ -31,12 +31,13 @@ InterruptManager::InterruptManager(GlobalDescriptorTable *gdt) :
 	uint16_t CodeSegment = gdt->CodeSegmentSelector();
 	const uint8_t IDT_INTERRUPT_GATE = 0xE;
 
-	for (uint16_t i = 0; i < 256; i++) {
-		SetInterruptDescriptorTableEntry(i, CodeSegment, &IgnoreInterrupt, 0x0, IDT_INTERRUPT_GATE);
+	for (uint8_t i = 0; i < 255; i++) {
+		SetInterruptDescriptorTableEntry(i, CodeSegment, &IgnoreInterrupt, 0, IDT_INTERRUPT_GATE);
 	}
+	SetInterruptDescriptorTableEntry(255, CodeSegment, &IgnoreInterrupt, 0, IDT_INTERRUPT_GATE);
 
-	SetInterruptDescriptorTableEntry(0x20, CodeSegment, &HandleInterruptRequest0x00, 0x0, IDT_INTERRUPT_GATE);
-	SetInterruptDescriptorTableEntry(0x21, CodeSegment, &HandleInterruptRequest0x01, 0x0, IDT_INTERRUPT_GATE);
+	SetInterruptDescriptorTableEntry(0x20, CodeSegment, &HandleInterruptRequest0x00, 0, IDT_INTERRUPT_GATE);
+	SetInterruptDescriptorTableEntry(0x21, CodeSegment, &HandleInterruptRequest0x01, 0, IDT_INTERRUPT_GATE);
 
 	picMasterCommand.Write(0x11);
 	picSlaveCommand.Write(0x11);
@@ -57,6 +58,7 @@ InterruptManager::InterruptManager(GlobalDescriptorTable *gdt) :
 	idt.size = 256 * sizeof(GateDescriptor) - 1;
 	idt.base = (uint32_t)interruptDescriptorTable;
 	asm volatile("lidt %0" : : "m" (idt));
+	printf("IDT\n");
 }
 
 InterruptManager::~InterruptManager()
@@ -66,7 +68,7 @@ InterruptManager::~InterruptManager()
 
 uint32_t InterruptManager::HandleInterrupt(uint8_t interruptNumber, uint32_t esp)
 {
-	printf(" INTERRUPT");
+	printf("INTERRUPT");
 
 	return esp;
 }

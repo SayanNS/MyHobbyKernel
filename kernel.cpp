@@ -74,6 +74,4 @@ extern "C" void kernelMain(void *multiboot_structure, uint32_t magicnumber)
 	interrupts.Activate();
 
 	while (1);
-
-	printf("Goodbye!\n");
 }
