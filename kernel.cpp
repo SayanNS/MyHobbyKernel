@@ -1,6 +1,7 @@
 #include "types.h"
 #include "gdt.h"
 #include "interrupts.h"
+#include "keyboard.h"
 
 #define CONSOLE_WIDTH 80
 #define CONSOLE_HEIGHT 25
@@ -70,7 +71,7 @@ extern "C" void kernelMain(void *multiboot_structure, uint32_t magicnumber)
 
 	GlobalDescriptorTable gdt;
 	InterruptManager interrupts(&gdt);
-
+	KeyboardDriver KeyboardDriver(&interrupts);
 	interrupts.Activate();
 
 	while (1);

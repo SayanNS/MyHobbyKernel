@@ -34,7 +34,6 @@ int_bottom:
 	pushl %esp
 	push (interruptnumber)
 	call _ZN16InterruptManager15HandleInterruptEhj
-	# addl $5, %esp
 	movl %eax, %esp
 
 	popl %gs
