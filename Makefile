@@ -3,7 +3,7 @@ GPPARAMS = -m32 -fno-use-cxa-atexit -nostdlib -fno-builtin -fno-rtti -fno-except
 ASPARAMS = --32
 LDPARAMS = -melf_i386
 
-objects = loader.o kernel.o gdt.o
+objects = loader.o kernel.o gdt.o port.o interruptstubs.o interrupts.o
 
 %.o: %.cpp
 	g++ $(GPPARAMS) -o $@ -c $<
@@ -29,6 +29,7 @@ kernel.iso: kernel.bin
 run: kernel.iso
 	(killall VirtualBoxVM && sleep 1) || true
 	VirtualBoxVM --startvm "My Operating System" &
-	
+
+.PHONY: clean
 clean:
-	rm *.o *.bin *.iso | rm -rf iso
+	rm -f $(objects) kernel.bin kernel.iso

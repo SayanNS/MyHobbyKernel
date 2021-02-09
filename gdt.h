@@ -1,4 +1,3 @@
-
 #ifndef __GDT_H
 #define __GDT_H
 
@@ -23,16 +22,19 @@ public:
 
 	} __attribute__((packed));
 
+private:
 	SegmentDescriptor nullSegmentSelector;
 	SegmentDescriptor unusedSegmentSelector;
 	SegmentDescriptor codeSegmentSelector;
 	SegmentDescriptor dataSegmentSelector;
-
+	
+public:
+	
 	GlobalDescriptorTable();
 	~GlobalDescriptorTable();
 
-	uint16_t CodeSegmentDescriptor();
-	uint16_t DataSegmentDescriptor();	
+	uint16_t CodeSegmentSelector();
+	uint16_t DataSegmentSelector();
 };
 
 #endif
