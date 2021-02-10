@@ -72,6 +72,7 @@ public:
 	static void IgnoreInterrupt();
 	static void HandleInterruptRequest0x00();
 	static void HandleInterruptRequest0x01();
+	static void HandleInterruptRequest0x0C();
 };
 
 #endif

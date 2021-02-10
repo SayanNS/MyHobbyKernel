@@ -52,11 +52,12 @@ InterruptManager::InterruptManager(GlobalDescriptorTable *gdt) :
 
 	for (uint16_t i = 0; i < 256; i++) {
 		handlers[i] = 0;
-		SetInterruptDescriptorTableEntry(i, CodeSegment, &IgnoreInterrupt, 0, IDT_INTERRUPT_GATE);
+		SetInterruptDescriptorTableEntry(i, CodeSegment, IgnoreInterrupt, 0, IDT_INTERRUPT_GATE);
 	}
 
-	SetInterruptDescriptorTableEntry(0x20, CodeSegment, &HandleInterruptRequest0x00, 0, IDT_INTERRUPT_GATE);
-	SetInterruptDescriptorTableEntry(0x21, CodeSegment, &HandleInterruptRequest0x01, 0, IDT_INTERRUPT_GATE);
+	SetInterruptDescriptorTableEntry(0x20, CodeSegment, HandleInterruptRequest0x00, 0, IDT_INTERRUPT_GATE);
+	SetInterruptDescriptorTableEntry(0x21, CodeSegment, HandleInterruptRequest0x01, 0, IDT_INTERRUPT_GATE);
+	SetInterruptDescriptorTableEntry(0x2C, CodeSegment, HandleInterruptRequest0x0C, 0, IDT_INTERRUPT_GATE);
 
 	picMasterCommand.Write(0x11);
 	picSlaveCommand.Write(0x11);
