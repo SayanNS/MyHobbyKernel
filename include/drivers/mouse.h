@@ -2,9 +2,9 @@
 #ifndef __MOUSE_H
 #define __MOUSE_H
 
-#include "types.h"
-#include "interrupts.h"
-#include "port.h"
+#include "common/types.h"
+#include "hardwarecommunication/interrupts.h"
+#include "hardwarecommunication/port.h"
 
 class MouseDriver : public InterruptHandler
 {

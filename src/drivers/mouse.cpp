@@ -1,5 +1,5 @@
 
-#include "mouse.h"
+#include "drivers/mouse.h"
 
 MouseDriver::MouseDriver(InterruptManager *interruptManager) :
 	InterruptHandler(0x2C, interruptManager),

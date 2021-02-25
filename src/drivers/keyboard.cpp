@@ -1,5 +1,6 @@
 
-#include "keyboard.h"
+#include "drivers/keyboard.h"
+#include "common/print.h"
 
 KeyboardDriver::KeyboardDriver(InterruptManager *interruptManager) :
 	InterruptHandler(0x21, interruptManager),
@@ -22,8 +23,6 @@ KeyboardDriver::~KeyboardDriver()
 
 	dataport.Write(0xF4); // activate keyboard (kinda)
 }
-
-void printf(char *);
 
 uint32_t KeyboardDriver::HandleInterrupt(uint32_t esp)
 {
