@@ -10,6 +10,7 @@
 #include "drivers/ata.h"
 #include "mm/memorymanager.h"
 
+extern "C" uint32_t header_addr;
 extern "C" uint32_t load_addr;
 extern "C" uint32_t load_end_addr;
 extern "C" uint32_t bss_end_addr;
@@ -19,11 +20,11 @@ struct multiboot_header const multiboot_header __attribute__((section(".multiboo
 	.magic = MULTIBOOT_HEADER_MAGIC,
 	.flags = MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO | MULTIBOOT_AOUT_KLUDGE,
 	.checksum = -(multiboot_header.magic + multiboot_header.flags),
-	.header_addr = 0x0100000,
+	.header_addr = (uint32_t) &header_addr,
 	.load_addr = (uint32_t) &load_addr,
 	.load_end_addr = (uint32_t) &load_end_addr,
 	.bss_end_addr = (uint32_t) &bss_end_addr,
-	.entry_addr = (uint32_t)&loader
+	.entry_addr = (uint32_t) &loader
 };
 
 // typedef void (*constructor)();
@@ -75,6 +76,9 @@ static inline void alloc_page_bitmask(uint64_t address, uint64_t length)
 
 extern "C" void kernel_main(uint32_t mboot_magic, void *mboot_header)
 {
+	// struct multiboot_header *ptr = (struct multiboot_header *)&header_addr;
+	// printf("%x %x\n", ptr->magic, multiboot_header.magic);
+
 	if (mboot_magic != MULTIBOOT_BOOTLOADER_MAGIC) {
 		printf("ERROR");
 	}
