@@ -9,7 +9,7 @@
 
 enum Color : uint8_t
 {
-	BLACK = 0,
+	BLACK,
 	MAROON,
 	GREEN,
 	OLIVE,
@@ -32,9 +32,6 @@ struct VideoMemory
 	uint8_t symbol;
 	Color color;
 };
-
-extern struct VideoMemory *VideoMemory;
-extern uint8_t x, y;
 
 void printf(const char *format, ...);
 
