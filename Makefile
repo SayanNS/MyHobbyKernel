@@ -21,7 +21,7 @@ run: kernel.iso
 
 obj/%.o: src/%.cpp
 	mkdir -p ${@D}
-	g++ $(GPPARAMS) -o $@ -c $<
+	gcc $(GPPARAMS) -o $@ -c $<
 
 obj/%.o: src/%.s
 	mkdir -p ${@D}

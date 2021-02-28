@@ -1,9 +1,9 @@
 .section .text
-.extern kernel_main
+.extern _Z11kernel_mainjP14multiboot_info
 // .extern call_constructors
-.global loader
+.global entry_addr
 
-loader:
+entry_addr:
 	mov $kernel_stack, %esp
 
 	// should save ebx and eax before calling constructors
@@ -11,7 +11,7 @@ loader:
 
 	push %ebx
 	push %eax
-	call kernel_main
+	call _Z11kernel_mainjP14multiboot_info
 	add %esp, 8
 
 _stop:

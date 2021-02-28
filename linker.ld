@@ -8,7 +8,7 @@ SECTIONS
 	.multiboot :
 	{
 		header_addr = .;
-		KEEP(*(.multiboot*))
+		*(.multiboot*)
 	}
 
 	.text :
@@ -21,7 +21,6 @@ SECTIONS
 	.data :
 	{
 		/* start_ctors = .;
-		*(.init_array)
 		*(SORT_BY_INIT_PRIORITY(.init_array.*))
 		end_ctors = .; */
 
@@ -37,6 +36,7 @@ SECTIONS
 
 	/DISCARD/ :
 	{
+		*(.init_array)
 		*(.fini_array*)
 		*(.comment)
 	}

@@ -14,9 +14,9 @@ extern "C" uint32_t header_addr;
 extern "C" uint32_t load_addr;
 extern "C" uint32_t load_end_addr;
 extern "C" uint32_t bss_end_addr;
-extern "C" uint32_t loader;
+extern "C" uint32_t entry_addr;
 
-struct multiboot_header const multiboot_header __attribute__((section(".multiboot"))) = {
+struct multiboot_header static const multiboot_header __attribute__((section(".multiboot"))) = {
 	.magic = MULTIBOOT_HEADER_MAGIC,
 	.flags = MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO | MULTIBOOT_AOUT_KLUDGE,
 	.checksum = -(multiboot_header.magic + multiboot_header.flags),
@@ -24,18 +24,8 @@ struct multiboot_header const multiboot_header __attribute__((section(".multiboo
 	.load_addr = (uint32_t) &load_addr,
 	.load_end_addr = (uint32_t) &load_end_addr,
 	.bss_end_addr = (uint32_t) &bss_end_addr,
-	.entry_addr = (uint32_t) &loader
+	.entry_addr = (uint32_t) &entry_addr
 };
-
-// typedef void (*constructor)();
-// extern "C" constructor start_ctors;
-// extern "C" constructor end_ctors;
-// extern "C" void call_constructors()
-// {
-// 	for (constructor *i = &start_ctors; i != &end_ctors; i++) {
-// 		(*i)();
-// 	}
-// }
 
 static inline void alloc_page_bitmask(uint64_t address, uint64_t length)
 {
@@ -74,42 +64,35 @@ static inline void alloc_page_bitmask(uint64_t address, uint64_t length)
 	}
 }
 
-extern "C" void kernel_main(uint32_t mboot_magic, void *mboot_header)
+void kernel_main(uint32_t mboot_magic, multiboot_info_t *mboot_info)
 {
-	// struct multiboot_header *ptr = (struct multiboot_header *)&header_addr;
-	// printf("%x %x\n", ptr->magic, multiboot_header.magic);
-
+	printf("%x", *(uint32_t *) 0x100000);
+	return;
+	
 	if (mboot_magic != MULTIBOOT_BOOTLOADER_MAGIC) {
-		printf("ERROR");
+		printf("multiboot_magic is not valid: %x != %x", mboot_magic, MULTIBOOT_BOOTLOADER_MAGIC);
+		return;
 	}
-
-	multiboot_info_t *mboot_info = (multiboot_info_t *)mboot_header;
 
 	if ((mboot_info->flags & (1 << 6)) == 0) {
-		printf("error");
-	}
+		printf("multiboot_memory_map is invalid");
+	} else {
+		for (multiboot_memory_map_t *mmap = (multiboot_memory_map_t *) mboot_info->mmap_addr;
+			(unsigned long) mmap < mboot_info->mmap_addr + mboot_info->mmap_length;
+			mmap = (multiboot_memory_map_t *) ((unsigned long)mmap + mmap->size + sizeof (mmap->size))) {
 
-	for (multiboot_memory_map_t *mmap = (multiboot_memory_map_t *) mboot_info->mmap_addr;
-		(unsigned long) mmap < mboot_info->mmap_addr + mboot_info->mmap_length;
-		mmap = (multiboot_memory_map_t *) ((unsigned long)mmap + mmap->size + sizeof (mmap->size))) {
-		// printf (" size = 0x%x, base_addr = 0x%r,"
-		// 		" length = 0x%r, type = 0x%x\n",
-		// 		mmap->size,
-		// 		mmap->addr,
-		// 		mmap->len,
-		// 		mmap->type);
-
-		if (mmap->type == MULTIBOOT_MEMORY_AVAILABLE) {
-			alloc_page_bitmask(mmap->addr, mmap->len);
+			if (mmap->type == MULTIBOOT_MEMORY_AVAILABLE) {
+				alloc_page_bitmask(mmap->addr, mmap->len);
+			}
 		}
 	}
 	
-	GlobalDescriptorTable gdt;
-	InterruptManager interrupts(&gdt);
+	// GlobalDescriptorTable gdt;
+	// InterruptManager interrupts(&gdt);
 
-	DriverManager driverManager;
+	// DriverManager driverManager;
 
-	KeyboardDriver keyboardDriver(&interrupts);
+	// KeyboardDriver keyboardDriver(&interrupts);
 
 	// MouseDriver mouseDriver(&interrupts);
 	// driverManager.AddDriver(mouseDriver);
