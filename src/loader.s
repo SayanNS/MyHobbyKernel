@@ -1,5 +1,5 @@
 .section .text
-.extern _Z11kernel_mainjP14multiboot_info
+.extern kernel_main
 // .extern call_constructors
 .global entry_addr
 
@@ -11,11 +11,11 @@ entry_addr:
 
 	push %ebx
 	push %eax
-	call _Z11kernel_mainjP14multiboot_info
-	add %esp, 8
+	call kernel_main
+	add $8, %esp
 
+.global _stop
 _stop:
-	cli
 	hlt
 	jmp _stop
 

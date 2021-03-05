@@ -2,9 +2,6 @@
 #ifndef __PRINT_H
 #define __PRINT_H
 
-#define CONSOLE_WIDTH 80
-#define CONSOLE_HEIGHT 25
-
 #include "common/types.h"
 
 enum Color : uint8_t

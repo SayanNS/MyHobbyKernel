@@ -5,15 +5,11 @@ SECTIONS
 {
 	. = 0x0100000;
 
-	.multiboot :
-	{
-		header_addr = .;
-		*(.multiboot*)
-	}
-
 	.text :
 	{
 		load_addr = .;
+		header_addr = .;
+		*(.multiboot*)
 		*(.text*)
 		*(.rodata)
 	}
@@ -33,6 +29,8 @@ SECTIONS
 		*(.bss)
 		bss_end_addr = .;
 	}
+
+	memory_info = .;
 
 	/DISCARD/ :
 	{

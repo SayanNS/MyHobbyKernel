@@ -1,5 +1,8 @@
 #include <common/print.h>
 
+#define CONSOLE_WIDTH 80
+#define CONSOLE_HEIGHT 25
+
 static struct VideoMemory *VideoMemory = (struct VideoMemory *)0xb8000;
 static uint8_t x = 0, y = 0;
 static char hex_upper[] = "0123456789ABCDEF";
@@ -22,27 +25,35 @@ static void putchar(char ch)
 	}
 }
 
-static void print_str(char *str)
+static void print_string(char *str)
 {
 	for (int i = 0; str[i] != '\0'; i++) {
 		putchar(str[i]);
 	}
 }
 
-static void print_udecimal(uint32_t number)
+static inline void print_udecimal(uint32_t number)
 {
-	print_str("print_udecimal is not implemented");
+	char sym[10];
+	int i = 0;
+	while (number > 0) {
+		sym[i++] = number % 10 + '0';
+		number /= 10;
+	}
+	for (i--; i >= 0; i--) {
+		putchar(sym[i]);
+	}
 }
 
-static void print_decimal(uint32_t number)
+static inline void print_decimal(uint32_t number)
 {
-	print_str("print_udecimal is not implemented");
+	print_string("print_decimal is not implemented");
 }
 
-static void print_uhexadecimal(uint32_t number, int min_num, char *hex)
+static inline void print_uhexadecimal(uint32_t number, int min_num, char *hex)
 {
 	for (int i = 7; i >= 0; i--) {
-		uint num = (number & (0xF << i * 4)) >> (i * 4);
+		int num = (number & (0xF << i * 4)) >> (i * 4);
 		if (num > 0) {
 			for (min_num-- ;min_num > i; min_num--) {
 				putchar('0');
@@ -55,10 +66,10 @@ static void print_uhexadecimal(uint32_t number, int min_num, char *hex)
 			return;
 		}
 	}
-	print_str("0");
+	putchar('0');
 }
 
-static void print_uhexadecimal64(uint64_t number, char *hex)
+static inline void print_uhexadecimal64(uint64_t number, char *hex)
 {
 	uint64_t mask = 0xF;
 	for (int i = 15; i >= 0; i--) {
@@ -72,10 +83,10 @@ static void print_uhexadecimal64(uint64_t number, char *hex)
 			return;
 		}
 	}
-	print_str("0");
+	putchar('0');
 }
 
-static void print_bitmask(uint32_t number)
+static inline void print_bitmask(uint32_t number)
 {
 	int i = 0;
 	for (; number > 0; i++, number /= 2) {
@@ -106,10 +117,10 @@ void printf(const char *format, ...)
 				case 'R': print_uhexadecimal64(*((uint64_t*)(param_ptr + offset)), hex_upper); offset += sizeof(uint64_t); break;
 				case 'u': print_udecimal(*((uint32_t*)(param_ptr + offset))); offset += sizeof(uint32_t); break;
 				case 'c': putchar(*((char*)(param_ptr + offset))); offset += sizeof(uint32_t); break;
-				case 's': print_str(*((char**)(param_ptr + offset))); offset += sizeof(char *); break;
+				case 's': print_string(*((char**)(param_ptr + offset))); offset += sizeof(char *); break;
 				case 'b': print_bitmask(*((uint32_t*)(param_ptr + offset))); offset += sizeof(uint32_t); break;
 				case '\0': return;
-				default: print_str("unknown command: "); putchar(format[i]);
+				default: print_string("unknown command: "); putchar(format[i]); putchar('\n');
 			}
 		} else {
 			putchar(format[i]);

@@ -1,37 +1,11 @@
 
 #include "gdt.h"
+#include "mm/memorymanager.h"
+#include "common/print.h"
 
-GlobalDescriptorTable::GlobalDescriptorTable() :
-	nullSegmentSelector(0, 0, 0),
-	unusedSegmentSelector(0, 0, 0),
-	codeSegmentSelector(0, 64 * 1024 * 1024, 0x9A),
-	dataSegmentSelector(0, 64 * 1024 * 1024, 0x92)
+static void init_segment_descriptor(struct SegmentDescriptor *segment_descriptor, uint32_t base, uint32_t limit, uint8_t flags)
 {
-	uint32_t i[2];
-	i[1] = (uint32_t)this;
-	i[0] = sizeof(GlobalDescriptorTable) << 16;
-
-	asm volatile("lgdt (%0)": : "p" (((uint8_t *)i) + 2));
-}
-
-GlobalDescriptorTable::~GlobalDescriptorTable()
-{
-
-}
-
-uint16_t GlobalDescriptorTable::DataSegmentSelector()
-{
-	return (uint8_t *)&dataSegmentSelector - (uint8_t *)this;
-}
-
-uint16_t GlobalDescriptorTable::CodeSegmentSelector()
-{
-	return (uint8_t *)&codeSegmentSelector - (uint8_t *)this;
-}
-
-GlobalDescriptorTable::SegmentDescriptor::SegmentDescriptor(uint32_t base, uint32_t limit, uint8_t flags)
-{
-	uint8_t *target = (uint8_t *)this;
+	uint8_t *target = (uint8_t *)segment_descriptor;
 
 	if (limit < 0x10000) {
 		target[6]= 0x40;
@@ -56,9 +30,30 @@ GlobalDescriptorTable::SegmentDescriptor::SegmentDescriptor(uint32_t base, uint3
 	target[5] = flags;
 }
 
-uint32_t GlobalDescriptorTable::SegmentDescriptor::Base()
+SegmentDescriptor * init_global_descriptor_table()
 {
-	uint8_t *target = (uint8_t *)this;
+	SegmentDescriptor *segmentDescriptors = (SegmentDescriptor *) kmalloc(sizeof(SegmentDescriptor) * SEGMENT_DESCRIPTORS_COUNT);
+	init_segment_descriptor(segmentDescriptors + SegmentDescriptorIndex::NULL_SEGMENT_DESCRIPTOR, 0, 0, 0);
+	init_segment_descriptor(segmentDescriptors + SegmentDescriptorIndex::UNUSED_SEGMENT_DESCRIPTOR, 0, 0, 0);
+	init_segment_descriptor(segmentDescriptors + SegmentDescriptorIndex::KERNEL_CODE_DESCRIPTOR, 0, 64 * 1024 * 1024, 0x9A);
+	init_segment_descriptor(segmentDescriptors + SegmentDescriptorIndex::KERNEL_DATA_DESCRIPTOR, 0, 64 * 1024 * 1024, 0x92);
+
+
+	GlobalDescriptorTablePointer gdtp;
+	gdtp.size = SEGMENT_DESCRIPTORS_COUNT * sizeof(SegmentDescriptor) - 1;
+	gdtp.base = (uint32_t) segmentDescriptors;
+	asm volatile("lgdt %0": : "m" (gdtp));
+
+	// uint32_t i[2];
+	// i[1] = (uint32_t) gdt;
+	// i[0] = sizeof(struct GlobalDescriptorTable) << 16;
+	// asm volatile("lgdt (%0"): : "m" ((uint32_t*) i + 2));
+	return segmentDescriptors;
+}
+
+uint32_t get_base(struct SegmentDescriptor *segment_descriptor)
+{
+	uint8_t *target = (uint8_t *)segment_descriptor;
 	uint32_t result = target[7];
 	result = (result << 8) + target[4];
 	result = (result << 8) + target[3];
@@ -67,9 +62,9 @@ uint32_t GlobalDescriptorTable::SegmentDescriptor::Base()
 	return result;
 }
 
-uint32_t GlobalDescriptorTable::SegmentDescriptor::Limit()
+uint32_t get_limit(struct SegmentDescriptor *segment_descriptor)
 {
-	uint8_t *target = (uint8_t *)this;
+	uint8_t *target = (uint8_t *)segment_descriptor;
 	uint32_t result = target[6] & 0xF;
 	result = (result << 8) + target[1];
 	result = (result << 8) + target[0];

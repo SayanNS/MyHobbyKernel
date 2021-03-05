@@ -6,14 +6,12 @@ LDPARAMS = -melf_i386
 objects = 	obj/loader.o \
 			obj/kernel.o \
 			obj/gdt.o \
-			obj/hardwarecommunication/port.o \
-			obj/hardwarecommunication/interruptstubs.o \
-			obj/hardwarecommunication/interrupts.o \
+			obj/idt.o \
+			obj/hardwarecommunication/pic.o \
 			obj/drivers/keyboard.o \
-			obj/drivers/mouse.o \
-			obj/drivers/ata.o \
-			obj/drivers/vga.o \
-			obj/common/print.o 
+			obj/interruptstubs.o \
+			obj/common/print.o \
+			obj/mm/memorymanager.o
 
 run: kernel.iso
 	(killall VirtualBoxVM && sleep 1) || true

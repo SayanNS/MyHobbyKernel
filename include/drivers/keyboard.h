@@ -3,17 +3,9 @@
 #define __KEYBOADR_H
 
 #include "common/types.h"
-#include "hardwarecommunication/interrupts.h"
-#include "hardwarecommunication/port.h"
+#include "idt.h"
 
-class KeyboardDriver : public InterruptHandler
-{
-	Port8Bit dataport;
-	Port8Bit commandport;
-public:
-	KeyboardDriver(InterruptManager *interrupManager);
-	~KeyboardDriver();
-	virtual uint32_t HandleInterrupt(uint32_t esp);
-};
+void init_keyboard(GateDescriptor *idt, int irq_offset);
+void handle_interrupt();
 
 #endif

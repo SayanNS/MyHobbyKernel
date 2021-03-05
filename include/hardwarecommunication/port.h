@@ -4,47 +4,46 @@
 
 #include "common/types.h"
 
-class Port
+static inline void outb(uint16_t port, uint8_t data)
 {
-protected:
-	uint16_t portnumber;
-	Port(uint16_t portnumber);
-	~Port();
-};
+	__asm__ volatile("outb %0, %1" : : "a" (data), "Nd" (port));
+}
 
-class Port8Bit : public Port
+static inline uint8_t inb(uint16_t port)
 {
-public:
-	Port8Bit(uint16_t portnumber);
-	~Port8Bit();
-	virtual void Write(uint8_t data);
-	virtual uint8_t Read();
-};
+	uint8_t result;
+	__asm__ volatile("inb %1, %0" : "=a" (result) : "Nd" (port));
+	return result;
 
-class Port8BitSlow : public Port8Bit
-{
-public:
-	Port8BitSlow(uint16_t portnumber);
-	~Port8BitSlow();
-	virtual void Write(uint8_t data);
-};
+}
 
-class Port16Bit : public Port
+static inline void outw(uint16_t port, uint16_t data)
 {
-public:
-	Port16Bit(uint16_t portnumber);
-	~Port16Bit();
-	virtual void Write(uint16_t data);
-	virtual uint16_t Read();
-};
+	__asm__ volatile("outw %0, %1" : : "a" (data), "Nd" (port));
+}
 
-class Port32Bit : public Port
+static inline uint16_t inw(uint16_t port)
 {
-public:
-	Port32Bit(uint16_t portnumber);
-	~Port32Bit();
-	virtual void Write(uint32_t data);
-	virtual uint32_t Read();
-};
+	uint16_t result;
+	__asm__ volatile("inw %1, %0" : "=a" (result) : "Nd" (port));
+	return result;
+}
+
+static inline void outl(uint16_t port, uint32_t data)
+{
+	__asm__ volatile("outl %0, %1" : : "a" (data), "Nd" (port));
+}
+
+static inline uint32_t inl(uint16_t port)
+{
+	uint32_t result;
+	__asm__ volatile("inl %1, %0" : "=a" (result) : "Nd" (port));
+	return result;
+}
+
+static inline void io_wait()
+{
+	asm volatile ("jmp 1f\n1:jmp 2f\n2:");
+}
 
 #endif

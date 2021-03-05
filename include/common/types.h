@@ -14,7 +14,21 @@ typedef unsigned int uint32_t;
 typedef long long int64_t;
 typedef unsigned long long uint64_t;
 
-typedef uint32_t *uintptr_t; 
-typedef unsigned int uint;
+typedef uint32_t *uintptr_t;
+
+struct list_head
+{
+	struct list_head *next;
+	struct list_head *prev;
+};
+
+#define offsetof(st, m) \
+	((int)&(((st *)0)->m))
+
+#define container_of(ptr, type, member) \
+	((type *)((int) ptr - offsetof(type, member)))
+
+#define foreach(plist, head) \
+	for (struct list_head *plist = head.next; plist != &head; plist = plist->next)
 
 #endif

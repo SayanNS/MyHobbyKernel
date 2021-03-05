@@ -5,17 +5,38 @@
 #include "common/types.h"
 
 #define PAGE_SIZE 4096
-#define BITS sizeof(int) * 8
+#define BITS (sizeof(int) * 8)
 
-// extern "C" uint bitmask_location[];
+extern "C" struct memory_info memory_info;
+#define bitmask_location memory_info.page_bitmask
 
-// for now it's a constant but maybe later will change it with a variable
-#define bitmask_location ((int *)0x0)
+struct area_info
+{
+	int page;
+	int length;
+};
+
+struct memory_info
+{
+	struct list_head list_head;
+	int *page_bitmask;
+	int area_info_count;
+	struct area_info area_info[];
+};
+
+struct memory_list 
+{
+	struct list_head list_head;
+	int length;
+};
 
 int allocate_pages(int number);
 void free_pages(int number);
 
-void *malloc(int size);
-void free(void *);
+void *kmalloc(int size);
+void kfree(void *ptr, int size);
+
+void insert_after(list_head *new_list, list_head *old_list);
+void insert_before(list_head *new_list, list_head *old_list);
 
 #endif

@@ -1,14 +1,74 @@
+#include "common/config.h"
 #include "multibootheader.h"
 #include "common/types.h"
 #include "common/print.h"
 #include "gdt.h"
-#include "hardwarecommunication/interrupts.h"
+#include "idt.h"
 #include "drivers/keyboard.h"
-#include "drivers/mouse.h"
-#include "drivers/driver.h"
-#include "drivers/vga.h"
-#include "drivers/ata.h"
+// #include "drivers/mouse.h"
+// #include "drivers/driver.h"
+// #include "drivers/vga.h"
+// #include "drivers/ata.h"
 #include "mm/memorymanager.h"
+#include "panic.h"
+#include "hardwarecommunication/pic.h"
+
+#define IRQ_OFFSET 0x20
+
+static inline void init_memory_manager(uint32_t, uint32_t);
+
+extern "C" void kernel_main(uint32_t mboot_magic, multiboot_info_t *mboot_info)
+{
+	if (mboot_magic != MULTIBOOT_BOOTLOADER_MAGIC) {
+		panic("multiboot_magic is not valid: %x != %x", mboot_magic, MULTIBOOT_BOOTLOADER_MAGIC);
+	}
+
+	if ((mboot_info->flags & (1 << 6)) == 0) {
+		panic("multiboot_memory_map is invalid\n");
+	}
+
+	init_memory_manager(mboot_info->mmap_addr, mboot_info->mmap_length);
+	SegmentDescriptor *gdt = init_global_descriptor_table();
+	GateDescriptor *idt = init_interrupt_desctiptor_table();
+	
+	init_pic(IRQ_OFFSET, IRQ_OFFSET + 8);
+	init_keyboard(idt, IRQ_OFFSET);
+
+	printf("activate interrupts\n");
+	activate_interrupts();
+
+	for (int i = 0; true; i++) {
+		if (i == 0) {
+			printf("loop");
+		}
+	}
+
+	// foreach (plist, memory_info.list_head) {
+	// 	printf("%x", container_of(plist, memory_list, list_head)->length);
+	// }
+	
+
+	// // MouseDriver mouseDriver(&interrupts);
+	// // driverManager.AddDriver(mouseDriver);
+	// // VideoGraphicsArray vga;
+
+	// interrupts.Activate();
+
+	// vga.SetMode(320, 200, 8);
+	// for (int32_t y = 0; y < 200; y++) {
+	// 	for (int32_t x = 0; x < 320; x++) {
+	// 		vga.PutPixel(x, y, 0, 0, 0);
+	// 	}
+	// }
+
+	// interrupt 14
+	// ATA ata0m(0x1f0, true);
+	// ATA ata0s(0x1f0, false);
+
+	// // interrupt 15
+	// ATA ata1m(0x170, true);
+	// ATA ata1s(0x170, false);
+}
 
 extern "C" uint32_t header_addr;
 extern "C" uint32_t load_addr;
@@ -27,23 +87,15 @@ struct multiboot_header static const multiboot_header __attribute__((section(".m
 	.entry_addr = (uint32_t) &entry_addr
 };
 
-static inline void alloc_page_bitmask(uint64_t address, uint64_t length)
+static void alloc_page_bitmask(int page, int length)
 {
-	if ((address & (PAGE_SIZE - 1)) || (length & (PAGE_SIZE - 1))) {
-		printf("memory area: %r:%r - is not page aligned.\n", address, length);
-		return;
-	}
-
-	address /= PAGE_SIZE;
-	length /= PAGE_SIZE;
-
-	int num = address & (BITS - 1); // five/six last bits depending on 32/64 bit mode
-	uint64_t i = address / BITS;
+	int num = page % BITS; // five/six last bits depending on 32/64 bit mode
+	int i = page / BITS;
 	if (num != 0) {
-		if (length < 32 && (num + (uint)length <= 32)) {
+		if (length < BITS && (num + (int)length <= BITS)) {
 			bitmask_location[i] = (bitmask_location[i] & ((1 << num) - 1))
-								| (((1 << (uint)length) - 1) << num)
-								| (bitmask_location[i] & ((1 << (BITS - ((uint)length + num)) - 1) << ((uint)length + num)));
+								| (((1 << (int)length) - 1) << num)
+								| (bitmask_location[i] & ((1 << (BITS - ((int)length + num)) - 1) << ((int)length + num)));
 			return;
 		}
 
@@ -55,63 +107,87 @@ static inline void alloc_page_bitmask(uint64_t address, uint64_t length)
 	}
 	
 	for (; length >= BITS; i++, length -= BITS) {
-		bitmask_location[i] = (uint)-1;
+		bitmask_location[i] = (int)-1;
 	}
 
 	if (length > 0) {
-		bitmask_location[i] = ((1 << (uint)length) - 1)
-							| (bitmask_location[i] & ((1 << (BITS - (uint)length) - 1) << (uint)length));
+		bitmask_location[i] = ((1 << (int)length) - 1)
+							| (bitmask_location[i] & ((1 << (BITS - (int)length) - 1) << (int)length));
 	}
 }
 
-void kernel_main(uint32_t mboot_magic, multiboot_info_t *mboot_info)
+/*
+ * TODO: check this function again later
+ */
+static void fill_area_info(uint64_t address, uint64_t length)
 {
-	printf("%x", *(uint32_t *) 0x100000);
-	return;
-	
-	if (mboot_magic != MULTIBOOT_BOOTLOADER_MAGIC) {
-		printf("multiboot_magic is not valid: %x != %x", mboot_magic, MULTIBOOT_BOOTLOADER_MAGIC);
+#ifdef MODE_32
+	if ((address >> 32) > 0) {
+		printf("memory area: %r %r - is higher than 4GB\n", address, length);
 		return;
 	}
+#endif
+	if ((int) address % PAGE_SIZE != 0) {
+		printf("Label is not impelemented file: %s, line: %d\n", __FILE__, __LINE__);
+		address &= ~(PAGE_SIZE - 1);
+	}
+	memory_info.area_info[memory_info.area_info_count].page = ((int) address) / PAGE_SIZE;
+#ifdef MODE_32
+	if (((address + length) >> 32) > 0) {
+		/*
+		 * FIX: If page equals to zero than length also becomes zero
+		 */
+		memory_info.area_info[memory_info.area_info_count].length = -memory_info.area_info[memory_info.area_info_count].page;
+		memory_info.area_info_count++;
+		return;
+	}
+#endif
+	if ((int) length % PAGE_SIZE != 0) {
+		struct memory_list *memory = (struct memory_list *)((int) address + (int) length & ~(PAGE_SIZE - 1));
+		memory->length = (int) length % PAGE_SIZE;
+		insert_after(&memory->list_head, &memory_info.list_head);
+	}
+	memory_info.area_info[memory_info.area_info_count].length = ((int) length) / PAGE_SIZE;
+	memory_info.area_info_count++;
+}
 
-	if ((mboot_info->flags & (1 << 6)) == 0) {
-		printf("multiboot_memory_map is invalid");
-	} else {
-		for (multiboot_memory_map_t *mmap = (multiboot_memory_map_t *) mboot_info->mmap_addr;
-			(unsigned long) mmap < mboot_info->mmap_addr + mboot_info->mmap_length;
-			mmap = (multiboot_memory_map_t *) ((unsigned long)mmap + mmap->size + sizeof (mmap->size))) {
+static inline void init_memory_manager(uint32_t mmap_addr, uint32_t mmap_length)
+{
+	memory_info.list_head.next = memory_info.list_head.prev = &memory_info.list_head;
 
-			if (mmap->type == MULTIBOOT_MEMORY_AVAILABLE) {
-				alloc_page_bitmask(mmap->addr, mmap->len);
+	uint64_t available_memory_addr = 0;
+	uint64_t available_memory_len = 0;
+	memory_info.area_info_count = 0;
+
+	for (multiboot_memory_map_t *mmap = (multiboot_memory_map_t *) mmap_addr;
+		(unsigned long) mmap < mmap_addr + mmap_length;
+		mmap = (multiboot_memory_map_t *) ((unsigned long)mmap + mmap->size + sizeof (mmap->size))) {
+		
+		if (mmap->type == MULTIBOOT_MEMORY_AVAILABLE) {
+			if (available_memory_addr + available_memory_len == mmap->addr) {
+				available_memory_len += mmap->len;
+			} else {
+				if (available_memory_len > 0) {
+					fill_area_info(available_memory_addr, available_memory_len);
+				}
+				available_memory_addr = mmap->addr;
+				available_memory_len = mmap->len;
 			}
 		}
 	}
-	
-	// GlobalDescriptorTable gdt;
-	// InterruptManager interrupts(&gdt);
+	if (available_memory_len > 0) {
+		fill_area_info(available_memory_addr, available_memory_len);
+		/*
+		 * maybe that's a bad idea to put bitmask right after memory_info structure 
+		 * I'm going to consider putting bitmask to another location later
+		 */
+		memory_info.page_bitmask = (int *)((int)&memory_info + sizeof(memory_info) + sizeof(area_info) * memory_info.area_info_count);
+	}
 
-	// DriverManager driverManager;
-
-	// KeyboardDriver keyboardDriver(&interrupts);
-
-	// MouseDriver mouseDriver(&interrupts);
-	// driverManager.AddDriver(mouseDriver);
-	// VideoGraphicsArray vga;
-
-	// interrupts.Activate();
-
-	// vga.SetMode(320, 200, 8);
-	// for (int32_t y = 0; y < 200; y++) {
-	// 	for (int32_t x = 0; x < 320; x++) {
-	// 		vga.PutPixel(x, y, 0, 0, 0);
-	// 	}
-	// }
-
-	// interrupt 14
-	// ATA ata0m(0x1f0, true);
-	// ATA ata0s(0x1f0, false);
-
-	// // interrupt 15
-	// ATA ata1m(0x170, true);
-	// ATA ata1s(0x170, false);
+	for (int i = 0; i < memory_info.area_info_count; i++) {
+		/*
+		 * TODO: set page bits where bitmask and os reside
+		 */
+		alloc_page_bitmask(memory_info.area_info[i].page, memory_info.area_info[i].length);
+	}
 }
