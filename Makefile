@@ -8,10 +8,11 @@ objects = 	obj/loader.o \
 			obj/gdt.o \
 			obj/idt.o \
 			obj/hardwarecommunication/pic.o \
+			obj/hardwarecommunication/pic_interruptstubs.o \
 			obj/drivers/keyboard.o \
 			obj/interruptstubs.o \
 			obj/common/print.o \
-			obj/mm/memorymanager.o
+			obj/memory/memorymanager.o
 
 run: kernel.iso
 	(killall VirtualBoxVM && sleep 1) || true

@@ -6,10 +6,9 @@
 #include "idt.h"
 #include "drivers/keyboard.h"
 // #include "drivers/mouse.h"
-// #include "drivers/driver.h"
 // #include "drivers/vga.h"
 // #include "drivers/ata.h"
-#include "mm/memorymanager.h"
+#include "memory/memorymanager.h"
 #include "panic.h"
 #include "hardwarecommunication/pic.h"
 
@@ -31,15 +30,14 @@ extern "C" void kernel_main(uint32_t mboot_magic, multiboot_info_t *mboot_info)
 	SegmentDescriptor *gdt = init_global_descriptor_table();
 	GateDescriptor *idt = init_interrupt_desctiptor_table();
 	
-	init_pic(IRQ_OFFSET, IRQ_OFFSET + 8);
-	init_keyboard(idt, IRQ_OFFSET);
+	init_pic(idt, IRQ_OFFSET, IRQ_OFFSET + 8);
+	init_keyboard();
 
-	printf("activate interrupts\n");
 	activate_interrupts();
 
-	for (int i = 0; true; i++) {
+	for (uint32_t i = 0; true; i++) {
 		if (i == 0) {
-			printf("loop");
+			printf("loop\n");
 		}
 	}
 

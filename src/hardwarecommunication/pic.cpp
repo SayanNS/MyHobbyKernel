@@ -19,9 +19,7 @@
 #define ICW4_BUF_MASTER	0x0C		/* Buffered mode/master */
 #define ICW4_SFNM	0x10		/* Special fully nested (not) */
 
-#define PIC_EOI	0x20
-
-void init_pic(int master_offset, int slave_offset)
+void init_pic(GateDescriptor *idt, int master_offset, int slave_offset)
 {
 	uint8_t master_mask, slave_mask;
 
@@ -48,12 +46,16 @@ void init_pic(int master_offset, int slave_offset)
 
 	outb(PIC_MASTER_DATA_PORT, master_mask);
 	outb(PIC_SLAVE_DATA_PORT, slave_mask);
+
+	int offset = SegmentDescriptorIndex::KERNEL_CODE_DESCRIPTOR * sizeof(struct SegmentDescriptor);
+	set_gate_descriptor(idt + master_offset + PIC_DEVICE_IRQ_NUMBER::PIC_TIMER, offset, pic_timer_interrupt_handler, 0, IDT_INTERRUPT_GATE);
+	set_gate_descriptor(idt + master_offset + PIC_DEVICE_IRQ_NUMBER::PIC_KEYBOARD, offset, pic_keyboard_interrupt_handler, 0, IDT_INTERRUPT_GATE);
 }
 
-void PIC_sendEOI(uint8_t irq)
-{
-	if (irq > 8) {
-		outb(PIC_SLAVE_COMMAND_PORT, PIC_EOI);
-	}
-	outb(PIC_MASTER_COMMAND_PORT, PIC_EOI);
-}
+// void PIC_sendEOI(uint8_t irq)
+// {
+// 	if (irq > 8) {
+// 		outb(PIC_SLAVE_COMMAND_PORT, PIC_EOI);
+// 	}
+// 	outb(PIC_MASTER_COMMAND_PORT, PIC_EOI);
+// }

@@ -1,6 +1,6 @@
 
 #include "gdt.h"
-#include "mm/memorymanager.h"
+#include "memory/memorymanager.h"
 #include "common/print.h"
 
 static void init_segment_descriptor(struct SegmentDescriptor *segment_descriptor, uint32_t base, uint32_t limit, uint8_t flags)

@@ -26,9 +26,16 @@ struct InterruptDescriptorTablePointer
 
 GateDescriptor * init_interrupt_desctiptor_table();
 
+void ignore_interrupt();
+
 static inline void activate_interrupts()
 {
 	asm("sti");
+}
+
+static inline void deactivate_interrupts()
+{
+	asm("cli");
 }
 
 void set_gate_descriptor(GateDescriptor *descriptor, uint16_t offset, void (*handler)(), uint8_t privilege,	uint8_t type);
